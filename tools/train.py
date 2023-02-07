@@ -7,6 +7,8 @@ results.
 
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+import sys
+sys.path.append("/home/featurize/work/anomalib")
 
 import logging
 import warnings
