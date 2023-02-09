@@ -2,6 +2,8 @@
 
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+import sys
+sys.path.append("/root/autodl-tmp/anomalib")
 
 from argparse import ArgumentParser, Namespace
 

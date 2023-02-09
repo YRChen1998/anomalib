@@ -1,7 +1,7 @@
 dataset:
   name: mvtec
   format: mvtec
-  path: ./datasets/MVTec
+  path: /root/autodl-tmp/datasets/MVTec
   category: bottle
   task: segmentation
   train_batch_size: 32
@@ -56,7 +56,7 @@ visualization:
 
 project:
   seed: 42
-  path: ./results
+  path: /root/autodl-tmp/results
 
 logging:
   logger: [] # options: [comet, tensorboard, wandb, csv] or combinations.

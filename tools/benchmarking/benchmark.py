@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+import sys
+sys.path.append("/root/autodl-tmp/anomalib")
+
 import functools
 import io
 import logging
