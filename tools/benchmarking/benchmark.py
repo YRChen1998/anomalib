@@ -307,7 +307,7 @@ if __name__ == "__main__":
     # The idea is to distribute metrics collection over all the available devices.
 
     parser = ArgumentParser()
-    parser.add_argument("--config", type=Path, help="Path to sweep configuration")
+    parser.add_argument("--config", type=Path, help="Path to sweep configuration", default="./tools/benchmarking/benchmark_params.yaml")
     _args = parser.parse_args()
 
     print("Benchmarking started 🏃‍♂️. This will take a while ⏲ depending on your configuration.")

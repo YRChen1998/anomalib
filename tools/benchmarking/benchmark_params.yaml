@@ -1,10 +1,8 @@
 seed: 42
 compute_openvino: false
 hardware:
-  - cpu
   - gpu
 writer:
-  - wandb
   - tensorboard
 grid_search:
   dataset:
@@ -24,7 +22,6 @@ grid_search:
       - transistor
       - wood
       - zipper
-    image_size: [224]
+    image_size: [256]
   model_name:
     - padim
-    - patchcore
