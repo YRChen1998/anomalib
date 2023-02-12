@@ -9,6 +9,7 @@ Paper https://arxiv.org/abs/2011.08785
 from __future__ import annotations
 
 import logging
+import random
 
 import torch
 from omegaconf import DictConfig, ListConfig
@@ -90,6 +91,23 @@ class Padim(AnomalyModule):
         #   is run within train epoch.
         logger.info("Aggregating the embedding extracted from the training set.")
         embeddings = torch.vstack(self.embeddings)
+
+        # Dimension Reduction
+        # # PCA
+        # embeddings = self.model.pca(embeddings)
+
+        # # LLE
+        # batch, channel, height, width = embeddings.size()
+        # id = random.sample(range(embeddings.shape[0]), 1)
+        # _ = self.model.lle(embeddings[id])
+        # embeddings = self.model.LLE.transform(embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy())
+        # embeddings = torch.tensor(embeddings).reshape(batch, height, width, self.model.n_features).permute(0, 3, 1, 2).float()
+
+        # # PCA_V
+        # embeddings = self.model.pca_v('npca', embeddings, 0.99)
+
+        # # DFS
+        # embeddings = self.model.dfs('2_3', embeddings)
 
         logger.info("Fitting a Gaussian to the embedding collected from the training set.")
         self.stats = self.model.gaussian.fit(embeddings)
