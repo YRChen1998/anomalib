@@ -12,14 +12,14 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor
 
 from anomalib.models.components import AnomalyModule
-from anomalib.models.peif.torch_model import PEIFModel
+from anomalib.models.peif.torch_model import PeifModel
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["Padim", "PadimLightning"]
+__all__ = ["Peif", "PeifLightning"]
 
 
-class PEIF(AnomalyModule):
+class Peif(AnomalyModule):
     """PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization.
 
     Args:
@@ -42,7 +42,7 @@ class PEIF(AnomalyModule):
         super().__init__()
 
         self.layers = layers
-        self.model: PEIFModel = PEIFModel(
+        self.model: PeifModel = PeifModel(
             input_size=input_size,
             backbone=backbone,
             pre_trained=pre_trained,
@@ -88,7 +88,7 @@ class PEIF(AnomalyModule):
         embeddings = torch.vstack(self.embeddings)
 
         logger.info("Fitting a Gaussian to the embedding collected from the training set.")
-        self.stats = self.model.gaussian.fit(embeddings)
+        self.stats = self.model.iforest.fit(embeddings)
 
     def validation_step(self, batch: dict[str, str | Tensor], *args, **kwargs) -> STEP_OUTPUT:
         """Validation Step of PADIM.
@@ -108,7 +108,7 @@ class PEIF(AnomalyModule):
         return batch
 
 
-class PEIFLightning(PEIF):
+class PeifLightning(Peif):
     """PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization.
 
     Args:

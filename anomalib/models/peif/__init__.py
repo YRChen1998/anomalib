@@ -1,5 +1,5 @@
 """PEIF model."""
 
-from .lightning_model import PEIF, PEIFLightning
+from .lightning_model import Peif, PeifLightning
 
-__all__ = ["PEIF", "PEIFLightning"]
+__all__ = ["Peif", "PeifLightning"]

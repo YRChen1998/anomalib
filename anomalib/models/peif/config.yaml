@@ -26,7 +26,7 @@ dataset:
     random_tile_count: 16
 
 model:
-  name: padim
+  name: peif
   backbone: resnet18
   pre_trained: true
   layers:
@@ -42,6 +42,7 @@ metrics:
   pixel:
     - F1Score
     - AUROC
+    - AUPRO
   threshold:
     method: adaptive #options: [adaptive, manual]
     manual_image: null

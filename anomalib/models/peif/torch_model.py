@@ -13,6 +13,7 @@ from anomalib.models.components.feature_extractors import dryrun_find_featuremap
 from anomalib.models.peif.anomaly_map import AnomalyMapGenerator
 from anomalib.pre_processing import Tiler
 
+from pyod.models.iforest import IForest
 # defaults from the paper
 _N_FEATURES_DEFAULTS = {
     "resnet18": 100,
@@ -43,7 +44,7 @@ def _deduce_dims(
     return n_features_original, n_patches
 
 
-class PEIFModel(nn.Module):
+class PeifModel(nn.Module):
     """PEIF Module.
 
     Args:
@@ -96,7 +97,15 @@ class PEIFModel(nn.Module):
         self.loss = None
         self.anomaly_map_generator = AnomalyMapGenerator(image_size=input_size)
 
-        self.gaussian = MultiVariateGaussian(self.n_features, self.n_patches)
+        self.iforest = IForest(n_estimators=100,
+                 max_samples="auto",
+                 contamination=0,
+                 max_features=1.,
+                 bootstrap=False,
+                 n_jobs=1,
+                 behaviour='old',
+                 random_state=None,
+                 verbose=0)
 
     def forward(self, input_tensor: Tensor) -> Tensor:
         """Forward-pass image-batch (N, C, H, W) into model to extract features.
@@ -155,6 +164,6 @@ class PEIFModel(nn.Module):
             embeddings = torch.cat((embeddings, layer_embedding), 1)
 
         # subsample embeddings
-        idx = self.idx.to(embeddings.device)
-        embeddings = torch.index_select(embeddings, 1, idx)
+        # idx = self.idx.to(embeddings.device)
+        # embeddings = torch.index_select(embeddings, 1, idx)
         return embeddings
