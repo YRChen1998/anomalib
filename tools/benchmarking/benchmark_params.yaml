@@ -24,4 +24,4 @@ grid_search:
 #      - zipper
     image_size: [256]
   model_name:
-    - padim
+    - peif

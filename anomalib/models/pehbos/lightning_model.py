@@ -16,10 +16,10 @@ from anomalib.models.peif.torch_model import PeifModel
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["Peif", "PeifLightning"]
+__all__ = ["Pehbos", "PehbosLightning"]
 
 
-class Peif(AnomalyModule):
+class Pehbos(AnomalyModule):
     """PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization.
 
     Args:
@@ -110,7 +110,7 @@ class Peif(AnomalyModule):
         return batch
 
 
-class PeifLightning(Peif):
+class PehbosLightning(Pehbos):
     """PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization.
 
     Args:

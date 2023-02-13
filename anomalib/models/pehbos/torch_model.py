@@ -13,7 +13,7 @@ from anomalib.models.components.feature_extractors import dryrun_find_featuremap
 from anomalib.models.peif.anomaly_map import AnomalyMapGenerator
 from anomalib.pre_processing import Tiler
 
-from pyod.models.iforest import IForest
+from pyod.models.hbos import HBOS
 from sklearn.decomposition import PCA
 
 # defaults from the paper
@@ -46,7 +46,7 @@ def _deduce_dims(
     return n_features_original, n_patches
 
 
-class PeifModel(nn.Module):
+class PehbosModel(nn.Module):
     """PEIF Module.
 
     Args:
@@ -101,10 +101,10 @@ class PeifModel(nn.Module):
 
         self.iforest = IForest(n_estimators=100,
                  max_samples='auto',
-                 contamination=0.000001,
+                 contamination=0.00001,
                  max_features=1.,
                  bootstrap=False,
-                 n_jobs=1,
+                 n_jobs=-1,
                  behaviour='old',
                  random_state=None,
                  verbose=0)

@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import numpy as np
-
+from random import sample
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -92,20 +92,20 @@ class PadimModel(nn.Module):
 
         # pylint: disable=not-callable
         # Since idx is randomly selected, save it with model to get same results
-        # self.register_buffer(
-        #     "idx",
-        #     torch.tensor(sample(range(0, self.n_features_original), self.n_features)),
-        # )
-        # self.idx: Tensor
+        self.register_buffer(
+            "idx",
+            torch.tensor(sample(range(0, self.n_features_original), self.n_features)),
+        )
+        self.idx: Tensor
         self.loss = None
         self.anomaly_map_generator = AnomalyMapGenerator(image_size=input_size)
 
-        # self.gaussian = MultiVariateGaussian(self.n_features, self.n_patches)
+        self.gaussian = MultiVariateGaussian(self.n_features, self.n_patches)
         # Dimension reduction
         # self.PCA = PCA(n_components=n_features)
         # self.LLE = LLE(n_components=n_features)
         # self.PCA_V = PCA()
-        self.DFS = PCA()
+        # self.DFS = PCA()
 
     def forward(self, input_tensor: Tensor) -> Tensor:
         """Forward-pass image-batch (N, C, H, W) into model to extract features.
@@ -166,20 +166,20 @@ class PadimModel(nn.Module):
             #     embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1, 2).to(device)
 
             # DFS
-            embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
-            embeddings = embeddings - self.PCA_V.mean_
-            if self.Type == '2_3':
-                embeddings = np.dot(embeddings, self.DFS.components_[self.m1:].T)
-                embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1, 2).to(device)
-            elif self.Type == '3':
-                embeddings = np.dot(embeddings, self.DFS.components_[self.m2:].T)
-                embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1,2).to(device)
-            elif self.Type == '2':
-                embeddings = np.dot(embeddings, self.DFS.components_[self.m1:self.m2].T)
-                embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1,2).to(device)
-            elif self.Type == '1':
-                embeddings = np.dot(embeddings, self.DFS.components_[:self.m1].T)
-                embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1,2).to(device)
+            # embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
+            # embeddings = embeddings - self.PCA_V.mean_
+            # if self.Type == '2_3':
+            #     embeddings = np.dot(embeddings, self.DFS.components_[self.m1:].T)
+            #     embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1, 2).to(device)
+            # elif self.Type == '3':
+            #     embeddings = np.dot(embeddings, self.DFS.components_[self.m2:].T)
+            #     embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1,2).to(device)
+            # elif self.Type == '2':
+            #     embeddings = np.dot(embeddings, self.DFS.components_[self.m1:self.m2].T)
+            #     embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1,2).to(device)
+            # elif self.Type == '1':
+            #     embeddings = np.dot(embeddings, self.DFS.components_[:self.m1].T)
+            #     embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1,2).to(device)
             output = self.anomaly_map_generator(
                 embedding=embeddings, mean=self.gaussian.mean, inv_covariance=self.gaussian.inv_covariance
             )
@@ -202,8 +202,8 @@ class PadimModel(nn.Module):
             embeddings = torch.cat((embeddings, layer_embedding), 1)
 
         # # subsample embeddings
-        # idx = self.idx.to(embeddings.device)
-        # embeddings = torch.index_select(embeddings, 1, idx)
+        idx = self.idx.to(embeddings.device)
+        embeddings = torch.index_select(embeddings, 1, idx)
         return embeddings
 
     def pca(self, embeddings: Tensor):
