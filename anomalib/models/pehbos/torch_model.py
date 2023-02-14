@@ -1,4 +1,4 @@
-"""PyTorch model for the PEIF model implementation."""
+"""PyTorch model for the PEHBOS model implementation."""
 
 from __future__ import annotations
 
@@ -74,8 +74,8 @@ class PehbosModel(nn.Module):
         self.feature_extractor = FeatureExtractor(backbone=self.backbone, layers=layers, pre_trained=pre_trained)
         self.n_features_original, self.n_patches = _deduce_dims(self.feature_extractor, input_size, self.layers)
 
-        # n_features = n_features or _N_FEATURES_DEFAULTS.get(self.backbone)
-        n_features = self.n_features_original
+        n_features = n_features or _N_FEATURES_DEFAULTS.get(self.backbone)
+        # n_features = self.n_features_original
 
         if n_features is None:
             raise ValueError(
@@ -99,15 +99,7 @@ class PehbosModel(nn.Module):
         self.loss = None
         self.anomaly_map_generator = AnomalyMapGenerator(image_size=input_size)
 
-        self.iforest = IForest(n_estimators=100,
-                 max_samples='auto',
-                 contamination=0.00001,
-                 max_features=1.,
-                 bootstrap=False,
-                 n_jobs=-1,
-                 behaviour='old',
-                 random_state=None,
-                 verbose=0)
+        self.hbos = HBOS(n_bins=10, alpha=0.1, tol=0.5, contamination=1e-8)
 
         self.PCA = PCA(n_components=n_features)
 
@@ -151,10 +143,9 @@ class PehbosModel(nn.Module):
             embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
 
             # PCA
-            n_components = self.n_features
             embeddings = self.PCA.transform(embeddings)
 
-            scores = torch.tensor(self.iforest.decision_function(embeddings)).reshape(batch, 1, height, width).to(device).float()
+            scores = torch.tensor(self.hbos.decision_function(embeddings)).reshape(batch, 1, height, width).to(device).float()
             output = self.anomaly_map_generator(scores=scores)
         return output
 
@@ -181,7 +172,6 @@ class PehbosModel(nn.Module):
 
     def pca(self, embeddings: Tensor):
         batch, channel, height, width = embeddings.size()
-        n_components = self.n_features
 
         embeddings = self.PCA.fit_transform(embeddings.permute(0, 2, 3, 1).reshape(-1, channel).numpy())
 

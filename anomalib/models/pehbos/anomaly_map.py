@@ -1,4 +1,4 @@
-"""Anomaly Map Generator for the PEIF model implementation."""
+"""Anomaly Map Generator for the PEHBOS model implementation."""
 
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0

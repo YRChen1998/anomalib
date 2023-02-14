@@ -20,7 +20,7 @@ __all__ = ["Peif", "PeifLightning"]
 
 
 class Peif(AnomalyModule):
-    """PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization.
+    """PEIF: a Patch Embedding Isolation Forest Framework for Anomaly Detection and Localization.
 
     Args:
         layers (list[str]): Layers to extract features from the backbone CNN
@@ -55,11 +55,11 @@ class Peif(AnomalyModule):
 
     @staticmethod
     def configure_optimizers() -> None:  # pylint: disable=arguments-differ
-        """PADIM doesn't require optimization, therefore returns no optimizers."""
+        """PEIF doesn't require optimization, therefore returns no optimizers."""
         return None
 
     def training_step(self, batch: dict[str, str | Tensor], *args, **kwargs) -> None:
-        """Training Step of PADIM. For each batch, hierarchical features are extracted from the CNN.
+        """Training Step of PEIF. For each batch, hierarchical features are extracted from the CNN.
 
         Args:
             batch (dict[str, str | Tensor]): Batch containing image filename, image, label and mask
@@ -80,20 +80,22 @@ class Peif(AnomalyModule):
         self.embeddings.append(embedding.cpu())
 
     def on_validation_start(self) -> None:
-        """Fit a Gaussian to the embedding collected from the training set."""
+        """Fit a Isolation Forest to the embedding collected from the training set."""
         # NOTE: Previous anomalib versions fit Gaussian at the end of the epoch.
         #   This is not possible anymore with PyTorch Lightning v1.4.0 since validation
         #   is run within train epoch.
         logger.info("Aggregating the embedding extracted from the training set.")
         embeddings = torch.vstack(self.embeddings)
-        batch, channel, height, width = embeddings.size()
+        # PCA
         embeddings = self.model.pca(embeddings)
+        # full
+        batch, channel, height, width = embeddings.size()
         # embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
         logger.info("Fitting a isolation forest to the embedding collected from the training set.")
         self.stats = self.model.iforest.fit(embeddings)
 
     def validation_step(self, batch: dict[str, str | Tensor], *args, **kwargs) -> STEP_OUTPUT:
-        """Validation Step of PADIM.
+        """Validation Step of PEIF.
 
         Similar to the training step, hierarchical features are extracted from the CNN for each batch.
 
@@ -111,7 +113,7 @@ class Peif(AnomalyModule):
 
 
 class PeifLightning(Peif):
-    """PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization.
+    """PEIF: a Patch Distribution Modeling Framework for Anomaly Detection and Localization.
 
     Args:
         hparams (DictConfig | ListConfig): Model params

@@ -26,7 +26,7 @@ dataset:
     random_tile_count: 16
 
 model:
-  name: peif
+  name: pehbos
   backbone: resnet18
   pre_trained: true
   layers:
@@ -34,6 +34,7 @@ model:
     - layer2
     - layer3
   normalization_method: min_max # options: [none, min_max, cdf]
+  n_features: 20
 
 metrics:
   image:

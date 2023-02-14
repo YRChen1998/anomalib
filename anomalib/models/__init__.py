@@ -27,6 +27,7 @@ from anomalib.models.reverse_distillation import ReverseDistillation
 from anomalib.models.rkde import Rkde
 from anomalib.models.stfpm import Stfpm
 from anomalib.models.peif import Peif
+from anomalib.models.pehbos import Pehbos
 
 __all__ = [
     "Cfa",
@@ -42,7 +43,8 @@ __all__ = [
     "ReverseDistillation",
     "Rkde",
     "Stfpm",
-    "Peif"
+    "Peif",
+    "Pehbos"
 ]
 
 logger = logging.getLogger(__name__)
@@ -95,6 +97,7 @@ def get_model(config: DictConfig | ListConfig) -> AnomalyModule:
         "rkde",
         "stfpm",
         "peif",
+        "pehbos",
     ]
     model: AnomalyModule
 

@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-from anomalib.models.components import FeatureExtractor, MultiVariateGaussian
+from anomalib.models.components import FeatureExtractor
 from anomalib.models.components.feature_extractors import dryrun_find_featuremap_dims
 from anomalib.models.peif.anomaly_map import AnomalyMapGenerator
 from anomalib.pre_processing import Tiler
@@ -74,8 +74,7 @@ class PeifModel(nn.Module):
         self.feature_extractor = FeatureExtractor(backbone=self.backbone, layers=layers, pre_trained=pre_trained)
         self.n_features_original, self.n_patches = _deduce_dims(self.feature_extractor, input_size, self.layers)
 
-        # n_features = n_features or _N_FEATURES_DEFAULTS.get(self.backbone)
-        n_features = self.n_features_original
+        n_features = n_features or _N_FEATURES_DEFAULTS.get(self.backbone)
 
         if n_features is None:
             raise ValueError(
@@ -101,7 +100,7 @@ class PeifModel(nn.Module):
 
         self.iforest = IForest(n_estimators=100,
                  max_samples='auto',
-                 contamination=0.000001,
+                 contamination=1e-8,
                  max_features=1.,
                  bootstrap=False,
                  n_jobs=1,
@@ -151,9 +150,7 @@ class PeifModel(nn.Module):
             embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
 
             # PCA
-            n_components = self.n_features
             embeddings = self.PCA.transform(embeddings)
-
             scores = torch.tensor(self.iforest.decision_function(embeddings)).reshape(batch, 1, height, width).to(device).float()
             output = self.anomaly_map_generator(scores=scores)
         return output
@@ -181,8 +178,6 @@ class PeifModel(nn.Module):
 
     def pca(self, embeddings: Tensor):
         batch, channel, height, width = embeddings.size()
-        n_components = self.n_features
-
         embeddings = self.PCA.fit_transform(embeddings.permute(0, 2, 3, 1).reshape(-1, channel).numpy())
 
         return embeddings
