@@ -16,7 +16,7 @@ from anomalib.models.components.feature_extractors import dryrun_find_featuremap
 from anomalib.models.padim.anomaly_map import AnomalyMapGenerator
 from anomalib.pre_processing import Tiler
 
-from sklearn.decomposition import PCA, IncrementalPCA
+from sklearn.decomposition import PCA
 # from sklearn.manifold import LocallyLinearEmbedding as LLE
 # defaults from the paper
 _N_FEATURES_DEFAULTS = {
@@ -89,22 +89,23 @@ class PadimModel(nn.Module):
         ), f"for backbone {self.backbone}, 0 < n_features <= {self.n_features_original}, found {n_features}"
 
         self.n_features = n_features
+        # self.n_features = self.n_features_original
 
         # pylint: disable=not-callable
         # Since idx is randomly selected, save it with model to get same results
-        self.register_buffer(
-            "idx",
-            torch.tensor(sample(range(0, self.n_features_original), self.n_features)),
-        )
-        self.idx: Tensor
+        # self.register_buffer(
+        #     "idx",
+        #     torch.tensor(sample(range(0, self.n_features_original), self.n_features)),
+        # )
+        # self.idx: Tensor
         self.loss = None
         self.anomaly_map_generator = AnomalyMapGenerator(image_size=input_size)
 
-        self.gaussian = MultiVariateGaussian(self.n_features, self.n_patches)
+        # self.gaussian = MultiVariateGaussian(self.n_features, self.n_patches)
         # Dimension reduction
         # self.PCA = PCA(n_components=n_features)
         # self.LLE = LLE(n_components=n_features)
-        # self.PCA_V = PCA()
+        self.PCA_V = PCA()
         # self.DFS = PCA()
 
     def forward(self, input_tensor: Tensor) -> Tensor:
@@ -156,14 +157,14 @@ class PadimModel(nn.Module):
             # embeddings = torch.tensor(embeddings).reshape(batch, height, width, n_components).permute(0, 3, 1, 2).float().to(device)
 
             # # PCA_V
-            # embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
-            # embeddings = embeddings - self.PCA_V.mean_
-            # if self.Type == 'pca':
-            #     embeddings = np.dot(embeddings, self.PCA_V.components_[:self.last_component + 1].T)
-            #     embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1, 2).to(device)
-            # elif self.Type == 'npca':
-            #     embeddings = np.dot(embeddings, self.PCA_V.components_[self.last_component - 1:].T)
-            #     embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1, 2).to(device)
+            embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
+            embeddings = embeddings - self.PCA_V.mean_
+            if self.Type == 'pca':
+                embeddings = np.dot(embeddings, self.PCA_V.components_[:self.last_component + 1].T)
+                embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1, 2).to(device)
+            elif self.Type == 'npca':
+                embeddings = np.dot(embeddings, self.PCA_V.components_[self.last_component - 1:].T)
+                embeddings = torch.Tensor(embeddings).reshape(batch, height, width, self.n_features).permute(0, 3, 1, 2).to(device)
 
             # DFS
             # embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
@@ -202,8 +203,8 @@ class PadimModel(nn.Module):
             embeddings = torch.cat((embeddings, layer_embedding), 1)
 
         # # subsample embeddings
-        idx = self.idx.to(embeddings.device)
-        embeddings = torch.index_select(embeddings, 1, idx)
+        # idx = self.idx.to(embeddings.device)
+        # embeddings = torch.index_select(embeddings, 1, idx)
         return embeddings
 
     def pca(self, embeddings: Tensor):

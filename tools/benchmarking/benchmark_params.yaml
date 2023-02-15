@@ -8,20 +8,20 @@ grid_search:
   dataset:
     category:
       - bottle
-#      - cable
-#      - capsule
-#      - carpet
-#      - grid
-#      - hazelnut
-#      - leather
-#      - metal_nut
-#      - pill
-#      - screw
-#      - tile
-#      - toothbrush
-#      - transistor
-#      - wood
-#      - zipper
+      - cable
+      - capsule
+      - carpet
+      - grid
+      - hazelnut
+      - leather
+      - metal_nut
+      - pill
+      - screw
+      - tile
+      - toothbrush
+      - transistor
+      - wood
+      - zipper
     image_size: [256]
   model_name:
-    - peif
+    - padim
