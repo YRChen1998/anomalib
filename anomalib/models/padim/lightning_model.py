@@ -104,10 +104,10 @@ class Padim(AnomalyModule):
         # embeddings = torch.tensor(embeddings).reshape(batch, height, width, self.model.n_features).permute(0, 3, 1, 2).float()
 
         # # PCA_V
-        embeddings = self.model.pca_v('npca', embeddings, 0.999)
+        # embeddings = self.model.pca_v('npca', embeddings, 0.9999)
 
         # # DFS
-        # embeddings = self.model.dfs('2_3', embeddings)
+        embeddings = self.model.dfs('2', embeddings)
 
         logger.info("Fitting a Gaussian to the embedding collected from the training set.")
         self.stats = self.model.gaussian.fit(embeddings)
