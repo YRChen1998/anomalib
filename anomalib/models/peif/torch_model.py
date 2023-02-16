@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from random import sample
+import numpy as np
 
 import torch
 import torch.nn.functional as F
@@ -108,7 +109,7 @@ class PeifModel(nn.Module):
                  random_state=None,
                  verbose=0)
 
-        self.PCA = PCA(n_components=n_features)
+        self.DFS = PCA()
 
     def forward(self, input_tensor: Tensor) -> Tensor:
         """Forward-pass image-batch (N, C, H, W) into model to extract features.
@@ -149,8 +150,20 @@ class PeifModel(nn.Module):
             batch, channel, height, width = embeddings.size()
             embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
 
-            # PCA
-            embeddings = self.PCA.transform(embeddings)
+            # # PCA
+            # embeddings = self.PCA.transform(embeddings)
+
+            # DFS
+            embeddings = embeddings - self.DFS.mean_
+            if self.Type == '2_3':
+                embeddings = np.dot(embeddings, self.DFS.components_[self.m1:].T)
+            elif self.Type == '3':
+                embeddings = np.dot(embeddings, self.DFS.components_[self.m2:].T)
+            elif self.Type == '2':
+                embeddings = np.dot(embeddings, self.DFS.components_[self.m1:self.m2].T)
+            elif self.Type == '1':
+                embeddings = np.dot(embeddings, self.DFS.components_[:self.m1].T)
+
             scores = torch.tensor(self.iforest.decision_function(embeddings)).reshape(batch, 1, height, width).to(device).float()
             output = self.anomaly_map_generator(scores=scores)
         return output
@@ -181,3 +194,45 @@ class PeifModel(nn.Module):
         embeddings = self.PCA.fit_transform(embeddings.permute(0, 2, 3, 1).reshape(-1, channel).numpy())
 
         return embeddings
+
+    def dfs(self, Type: str, embeddings: Tensor):
+        batch, channel, height, width = embeddings.size()
+        embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).numpy()
+        self.DFS.fit(embeddings)
+        variance_pca = self.DFS.explained_variance_  # feature矩阵的特征值
+        [Ns, Nf] = embeddings.shape
+        rw = max(np.nonzero(variance_pca)[0])  # rw:feature矩阵实际的的秩 - 1，即最小非零值的下标
+        mr_of_feature = Ns if Ns <= Nf else Nf  # mr_of_feature:feature有可能存在的最大秩
+        lmd_med = np.median(variance_pca[:rw + 1])  # 这里rw+1是因为python是左闭右开的，而rw就是下标，所以要+1
+        miu = 1
+        above_zero = np.maximum(variance_pca - (lmd_med + miu * (lmd_med - variance_pca[rw])), 0)
+        m1 = max(np.nonzero(above_zero)[0])
+        rk = np.zeros(rw)
+        for i in range(rw):
+            rk[i] = variance_pca[i + 1] / variance_pca[i]
+        window_size = 10
+        rk = np.convolve(rk, np.ones(window_size) / window_size, mode="same")  # 滑动平均
+        m2 = int(np.where(rk == max(rk[m1 + 1:]))[0][0])  # m2直接就是下标
+        self.m1 = m1
+        self.m2 = m2
+        embeddings = embeddings - self.DFS.mean_
+        if Type == '2_3':
+            self.Type = '2_3'
+            self.n_features = channel - m1
+            embeddings = np.dot(embeddings, self.DFS.components_[m1:].T)
+            return embeddings
+        elif Type == '3':
+            self.Type = '3'
+            self.n_features = channel - m2
+            embeddings = np.dot(embeddings, self.DFS.components_[m2:].T)
+            return embeddings
+        elif Type == '2':
+            self.Type = '2'
+            self.n_features = m2 - m1
+            embeddings = np.dot(embeddings, self.DFS.components_[m1:m2].T)
+            return embeddings
+        elif Type == '1':
+            self.Type = '1'
+            self.n_features = m1
+            embeddings = np.dot(embeddings, self.DFS.components_[:m1].T)
+            return embeddings

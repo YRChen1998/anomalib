@@ -107,7 +107,7 @@ class Padim(AnomalyModule):
         # embeddings = self.model.pca_v('npca', embeddings, 0.9999)
 
         # # DFS
-        embeddings = self.model.dfs('2', embeddings)
+        embeddings = self.model.dfs('1', embeddings)
 
         logger.info("Fitting a Gaussian to the embedding collected from the training set.")
         self.stats = self.model.gaussian.fit(embeddings)
