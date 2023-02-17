@@ -33,8 +33,9 @@ model:
     - layer1
     - layer2
     - layer3
+    - layer4
   normalization_method: min_max # options: [none, min_max, cdf]
-  n_features: 20
+  n_features: 100
 
 metrics:
   image:

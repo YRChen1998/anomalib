@@ -87,9 +87,12 @@ class Pehbos(AnomalyModule):
         logger.info("Aggregating the embedding extracted from the training set.")
         embeddings = torch.vstack(self.embeddings)
         # PCA
-        embeddings = self.model.pca(embeddings)
+        # embeddings = self.model.pca(embeddings)
+        # DFS
+        embeddings = self.model.dfs('2_3', embeddings)
+
         # full
-        batch, channel, height, width = embeddings.size()
+        # batch, channel, height, width = embeddings.size()
         # embeddings = embeddings.permute(0, 2, 3, 1).reshape(-1, channel).cpu().numpy()
         logger.info("Fitting a HBOS to the embedding collected from the training set.")
         self.stats = self.model.hbos.fit(embeddings)
