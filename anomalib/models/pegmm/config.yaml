@@ -4,7 +4,7 @@ dataset:
   path: ./datasets/MVTec
   category: bottle
   task: segmentation
-  train_batch_size: 8
+  train_batch_size: 32
   eval_batch_size: 32
   num_workers: 8
   image_size: 256 # dimensions to which images are resized (mandatory)
@@ -14,9 +14,9 @@ dataset:
     train: null
     eval: null
   test_split_mode: from_dir # options: [from_dir, synthetic]
-  test_split_ratio: 0.2 # fraction of train images held out testing (usage depends on test_split_mode)
+  test_split_ratio: null # fraction of train images held out testing (usage depends on test_split_mode)
   val_split_mode: same_as_test # options: [same_as_test, from_test, synthetic]
-  val_split_ratio: 0.5 # fraction of train/test images held out for validation (usage depends on val_split_mode)
+  val_split_ratio: null # fraction of train/test images held out for validation (usage depends on val_split_mode)
   tiling:
     apply: false
     tile_size: null
@@ -26,20 +26,16 @@ dataset:
     random_tile_count: 16
 
 model:
-  name: ddfr
+  name: pegmm
   backbone: resnet18
   pre_trained: true
   layers:
     - layer1
     - layer2
     - layer3
-  anomaly_source_path: ./datasets/dtd # optional, e.g. ./datasets/dtd
-  lr: 0.0001
-  early_stopping:
-    patience: 20
-    metric: pixel_AUROC
-    mode: max
+#    - layer4
   normalization_method: min_max # options: [none, min_max, cdf]
+  n_features: 100
 
 metrics:
   image:
@@ -71,6 +67,7 @@ logging:
 
 optimization:
   export_mode: null #options: onnx, openvino
+
 # PL Trainer Args. Don't add extra parameter here.
 trainer:
   enable_checkpointing: true
@@ -85,7 +82,7 @@ trainer:
   check_val_every_n_epoch: 1 # Don't validate before extracting features.
   fast_dev_run: false
   accumulate_grad_batches: 1
-  max_epochs: 700
+  max_epochs: 1
   min_epochs: null
   max_steps: -1
   min_steps: null

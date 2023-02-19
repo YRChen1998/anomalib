@@ -28,6 +28,8 @@ from anomalib.models.rkde import Rkde
 from anomalib.models.stfpm import Stfpm
 from anomalib.models.peif import Peif
 from anomalib.models.pehbos import Pehbos
+from anomalib.models.pegmm import Pegmm
+from anomalib.models.ddfr import Ddfr
 
 __all__ = [
     "Cfa",
@@ -44,7 +46,9 @@ __all__ = [
     "Rkde",
     "Stfpm",
     "Peif",
-    "Pehbos"
+    "Pehbos",
+    "Pegmm",
+    "Ddfr",
 ]
 
 logger = logging.getLogger(__name__)
@@ -98,6 +102,8 @@ def get_model(config: DictConfig | ListConfig) -> AnomalyModule:
         "stfpm",
         "peif",
         "pehbos",
+        "pegmm",
+        "ddfr",
     ]
     model: AnomalyModule
 

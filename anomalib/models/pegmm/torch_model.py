@@ -1,4 +1,4 @@
-"""PyTorch model for the PEHBOS model implementation."""
+"""PyTorch model for the PEGMM model implementation."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from anomalib.models.components.feature_extractors import dryrun_find_featuremap
 from anomalib.models.peif.anomaly_map import AnomalyMapGenerator
 from anomalib.pre_processing import Tiler
 
-from pyod.models.hbos import HBOS
+from pyod.models.gmm import GMM
 from sklearn.decomposition import PCA
 
 # defaults from the paper
@@ -47,8 +47,8 @@ def _deduce_dims(
     return n_features_original, n_patches
 
 
-class PehbosModel(nn.Module):
-    """PEIF Module.
+class PegmmModel(nn.Module):
+    """PEGMM Module.
 
     Args:
         input_size (tuple[int, int]): Input size for the model.
@@ -100,17 +100,24 @@ class PehbosModel(nn.Module):
         self.loss = None
         self.anomaly_map_generator = AnomalyMapGenerator(image_size=input_size)
 
-        self.hbos = HBOS(n_bins=10, alpha=0.1, tol=0.5, contamination=1e-8)
+        self.gmm = GMM(
+            n_components=10,
+            covariance_type="full",
+            tol=1e-3,
+            reg_covar=1e-6,
+            max_iter=100,
+            n_init=1,
+            init_params="kmeans",
+            weights_init=None,
+            means_init=None,
+            precisions_init=None,
+            random_state=None,
+            warm_start=False,
+            contamination=1e-8,
+        )
 
         # self.PCA = PCA(n_components=n_features)
         self.DFS = PCA()
-        self.tiler = Tiler(
-            tile_size=256,
-            stride=256,
-            remove_border_count=0,
-            mode="padding",
-            tile_count=16
-        )
 
 
     def forward(self, input_tensor: Tensor) -> Tensor:

@@ -18,12 +18,12 @@ from torch import Tensor, nn
 from anomalib.data.utils import Augmenter
 from anomalib.models.components import AnomalyModule
 from anomalib.models.ddfr.loss import DDFRLoss
-from anomalib.models.ddfr.torch_model import DDFRModel
+from anomalib.models.ddfr.torch_model import DdfrModel
 
-__all__ = ["DDFR", "DDFRLightning"]
+__all__ = ["Ddfr", "DdfrLightning"]
 
 
-class DDFR(AnomalyModule):
+class Ddfr(AnomalyModule):
     """DRÆM: A discriminatively trained reconstruction embedding for surface anomaly detection.
 
     Args:
@@ -32,39 +32,23 @@ class DDFR(AnomalyModule):
     """
 
     def __init__(
-        self, enable_sspcab: bool = False, sspcab_lambda: float = 0.1, anomaly_source_path: str | None = None
+        self,
+        layers: list[str],
+        input_size: tuple[int, int],
+        backbone: str,
+        pre_trained: bool = True,
+        anomaly_source_path: str | None = None,
     ) -> None:
         super().__init__()
 
         self.augmenter = Augmenter(anomaly_source_path)
-        self.model = DDFRModel(sspcab=enable_sspcab)
+        self.model = DdfrModel(
+            input_size=input_size,
+            backbone=backbone,
+            pre_trained=pre_trained,
+            layers=layers,
+        )
         self.loss = DDFRLoss()
-        self.sspcab = enable_sspcab
-
-        if self.sspcab:
-            self.sspcab_activations: dict = {}
-            self.setup_sspcab()
-            self.sspcab_loss = nn.MSELoss()
-            self.sspcab_lambda = sspcab_lambda
-
-    def setup_sspcab(self) -> None:
-        """Prepare the model for the SSPCAB training step by adding forward hooks for the SSPCAB layer activations."""
-
-        def get_activation(name: str) -> Callable:
-            """Retrieves the activations.
-
-            Args:
-                name (str): Identifier for the retrieved activations.
-            """
-
-            def hook(_, __, output: Tensor) -> None:
-                """Hook for retrieving the activations."""
-                self.sspcab_activations[name] = output
-
-            return hook
-
-        self.model.reconstructive_subnetwork.encoder.mp4.register_forward_hook(get_activation("input"))
-        self.model.reconstructive_subnetwork.encoder.block5.register_forward_hook(get_activation("output"))
 
     def training_step(self, batch: dict[str, str | Tensor], *args, **kwargs) -> STEP_OUTPUT:
         """Training Step of DRAEM.
@@ -84,14 +68,9 @@ class DDFR(AnomalyModule):
         # Apply corruption to input image
         augmented_image, anomaly_mask = self.augmenter.augment_batch(input_image)
         # Generate model prediction
-        reconstruction, prediction = self.model(augmented_image)
+        reconstructive_embeddings, original_embeddings = self.model(augmented_image, input_image)
         # Compute loss
-        loss = self.loss(input_image, reconstruction, anomaly_mask, prediction)
-
-        if self.sspcab:
-            loss += self.sspcab_lambda * self.sspcab_loss(
-                self.sspcab_activations["input"], self.sspcab_activations["output"]
-            )
+        loss = self.loss(reconstructive_embeddings, original_embeddings)
 
         self.log("train_loss", loss.item(), on_epoch=True, prog_bar=True, logger=True)
         return {"loss": loss}
@@ -107,12 +86,11 @@ class DDFR(AnomalyModule):
         """
         del args, kwargs  # These variables are not used.
 
-        prediction = self.model(batch["image"])
-        batch["anomaly_maps"] = prediction
+        batch["anomaly_maps"] = self.model(batch["image"])
         return batch
 
 
-class DDFRLightning(DDFR):
+class DdfrLightning(Ddfr):
     """DRÆM: A discriminatively trained reconstruction embedding for surface anomaly detection.
 
     Args:
@@ -121,8 +99,10 @@ class DDFRLightning(DDFR):
 
     def __init__(self, hparams: DictConfig | ListConfig) -> None:
         super().__init__(
-            enable_sspcab=hparams.model.enable_sspcab,
-            sspcab_lambda=hparams.model.sspcab_lambda,
+            input_size=hparams.model.input_size,
+            layers=hparams.model.layers,
+            backbone=hparams.model.backbone,
+            pre_trained=hparams.model.pre_trained,
             anomaly_source_path=hparams.model.anomaly_source_path,
         )
         self.hparams: DictConfig | ListConfig  # type: ignore
